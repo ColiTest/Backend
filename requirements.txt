@@ -2,4 +2,4 @@ Flask==2.0.3
 Werkzeug==2.0.3
 flask-cors==3.0.10
 python-can==3.3.1
-canopen==0.3.0
+canopen==1.0.0
