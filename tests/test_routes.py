@@ -47,3 +47,42 @@ def test_get_object_dictionary_content(client):
     for index, name in data.items():
         assert isinstance(index, str)
         assert isinstance(name, str)
+
+def test_get_index_value_without_subindex(client):
+    response = client.get('/canopen/index/1000')
+    assert response.status_code == 200
+    data = response.get_json()
+    assert 'index' in data
+    assert 'message' in data
+    assert data['message'] == 'This index does not have any subindices'
+
+def test_get_index_value_with_subindex(client):
+    response = client.get('/canopen/index/1018/1')
+    assert response.status_code == 200
+    data = response.get_json()
+    assert 'index' in data
+    assert 'subindex' in data
+    assert 'details' in data
+    details = data['details']
+    assert 'ParameterName' in details
+    assert 'ObjectType' in details
+    assert 'DataType' in details
+    assert 'AccessType' in details
+    assert 'DefaultValue' in details
+    assert 'PDOMapping' in details
+
+def test_get_index_value_invalid_subindex(client):
+    response = client.get('/canopen/index/1018/99')
+    assert response.status_code == 400
+    data = response.get_json()
+    assert 'index' in data
+    assert 'message' in data
+    assert 'available_subindices' in data
+    assert data['message'] == 'Invalid subindex'
+
+def test_get_index_value_invalid_index(client):
+    response = client.get('/canopen/index/9999')
+    assert response.status_code == 404
+    data = response.get_json()
+    assert 'message' in data
+    assert data['message'] == 'Index 0x9999 not found'
