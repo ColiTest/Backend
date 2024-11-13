@@ -49,12 +49,12 @@ def test_get_object_dictionary_content(client):
         assert isinstance(name, str)
 
 def test_get_index_value_without_subindex(client):
-    response = client.get('/canopen/index/1000')
-    assert response.status_code == 200
+    response = client.get('/canopen/index/1000/')
+    assert response.status_code == 400
     data = response.get_json()
     assert 'index' in data
     assert 'message' in data
-    assert data['message'] == 'This index does not have any subindices'
+    assert data['message'] == 'Invalid input. This index does not have any subindices.'
 
 def test_get_index_value_with_subindex(client):
     response = client.get('/canopen/index/1018/1')
@@ -78,11 +78,41 @@ def test_get_index_value_invalid_subindex(client):
     assert 'index' in data
     assert 'message' in data
     assert 'available_subindices' in data
-    assert data['message'] == 'Invalid subindex'
+    assert data['message'] == 'Invalid subindex. Please enter a valid subindex.'
 
 def test_get_index_value_invalid_index(client):
-    response = client.get('/canopen/index/9999')
+    response = client.get('/canopen/index/9999/')
     assert response.status_code == 404
     data = response.get_json()
     assert 'message' in data
     assert data['message'] == 'Index 0x9999 not found'
+
+def test_get_index_value_invalid_hex_string(client):
+    response = client.get('/canopen/index/ZZZZ/')
+    assert response.status_code == 400
+    data = response.get_json()
+    assert 'message' in data
+    assert data['message'] == "Invalid hex index 'ZZZZ'. Please use a valid hex format like '1018'."
+
+def test_get_index_value_subindex_boundary(client):
+    response_low = client.get('/canopen/index/1018/0')
+    assert response_low.status_code == 200
+    data_low = response_low.get_json()
+    assert 'index' in data_low
+    assert 'subindex' in data_low
+    assert 'details' in data_low
+
+    response_high = client.get('/canopen/index/1018/255')
+    if response_high.status_code == 200:
+        data_high = response_high.get_json()
+        assert 'index' in data_high
+        assert 'subindex' in data_high
+        assert 'details' in data_high
+    else:
+        assert response_high.status_code == 400
+
+def test_invalid_method_on_index_endpoint(client):
+    response = client.post('/canopen/index/1000')
+    assert response.status_code == 405
+    response = client.put('/canopen/index/1000')
+    assert response.status_code == 405
